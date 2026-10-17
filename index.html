@@ -1,0 +1,483 @@
+<!doctype html>
+<html lang="en-GB">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Family List</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Source+Serif+4:opsz,wght@8..60,500;8..60,600&display=swap" rel="stylesheet">
+<!--
+  Shared family to-do list. No personal data lives in this file.
+  The list itself is stored in a private JSONBin bin. Open the page with:
+    https://<site>/#bin=<BIN_ID>&key=<ACCESS_KEY>
+  The part after # is never sent to the web server; the page remembers it on that device.
+  Never store account numbers, card numbers, passwords or NI numbers in the list.
+-->
+<style>
+:root{
+  --bg:#f5f2ec; --surface:#fffdf9; --surface-2:#f0ece4; --ink:#23302a; --muted:#5d6963; --line:#e2dbcf;
+  --accent:#2f5d50; --accent-ink:#ffffff; --accent-soft:#e2ede8;
+  --todo:#8a5a12; --todo-bg:#fbeed6;
+  --contacted:#1d5a88; --contacted-bg:#e0ecf7;
+  --waiting:#6a3f88; --waiting-bg:#eee4f5;
+  --done:#2c6a37; --done-bg:#e0f0e2;
+  --na:#666; --na-bg:#ebebeb;
+  --danger:#a33a2a;
+  --shadow:0 1px 2px rgba(0,0,0,.05),0 3px 10px rgba(0,0,0,.04);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#161b19; --surface:#1f2623; --surface-2:#28302c; --ink:#e9ece9; --muted:#a7b1ac; --line:#34403a;
+    --accent:#7fbca8; --accent-ink:#10201a; --accent-soft:#25362f;
+    --todo:#f0c27a; --todo-bg:#3a2e1a; --contacted:#8fc0ea; --contacted-bg:#1d2f3e;
+    --waiting:#cfa8ec; --waiting-bg:#33263d; --done:#8fd39c; --done-bg:#1e3323; --na:#aaa; --na-bg:#2c2c2c;
+    --danger:#f08a78; --shadow:none;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#161b19; --surface:#1f2623; --surface-2:#28302c; --ink:#e9ece9; --muted:#a7b1ac; --line:#34403a;
+  --accent:#7fbca8; --accent-ink:#10201a; --accent-soft:#25362f;
+  --todo:#f0c27a; --todo-bg:#3a2e1a; --contacted:#8fc0ea; --contacted-bg:#1d2f3e;
+  --waiting:#cfa8ec; --waiting-bg:#33263d; --done:#8fd39c; --done-bg:#1e3323; --na:#aaa; --na-bg:#2c2c2c;
+  --danger:#f08a78; --shadow:none;
+}
+*{box-sizing:border-box}
+html{font-size:17px}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;line-height:1.45;-webkit-text-size-adjust:100%}
+.wrap{max-width:780px;margin:0 auto;padding:0 16px}
+header.top{background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.title-row{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;padding:16px 0 10px}
+h1{font-family:"Source Serif 4",Georgia,serif;font-weight:600;font-size:1.45rem;margin:0;line-height:1.2}
+.sub{color:var(--muted);font-size:.88rem;margin-top:2px}
+.me{font-size:.85rem;color:var(--muted);text-align:right;white-space:nowrap}
+.me button{font:inherit;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer;text-decoration:underline}
+.tabs{display:flex;gap:4px;overflow-x:auto;scrollbar-width:none;margin:0 -16px;padding:0 16px}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font:inherit;font-size:.92rem;background:none;border:0;border-bottom:3px solid transparent;padding:10px 12px;color:var(--muted);cursor:pointer;white-space:nowrap;min-height:44px}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--accent);font-weight:600}
+.sync{font-size:.78rem;color:var(--muted);padding:6px 0 0}
+.sync.error{color:var(--danger)}
+.banner{background:var(--todo-bg);color:var(--todo);border-radius:10px;padding:10px 12px;font-size:.88rem;margin:14px 0 0}
+main{padding:16px 0 80px}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px;box-shadow:var(--shadow)}
+.stat b{display:block;font-family:"Source Serif 4",Georgia,serif;font-size:1.7rem;line-height:1.1}
+.stat span{font-size:.8rem;color:var(--muted)}
+.bar{height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden;margin:4px 0 18px;display:flex}
+.bar i{display:block;height:100%}
+.filters{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
+.chip{font:inherit;font-size:.85rem;border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:99px;padding:8px 14px;cursor:pointer;min-height:40px}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.search{flex:1 1 180px;font:inherit;font-size:.92rem;padding:9px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface);color:var(--ink);min-height:42px}
+.btn{font:inherit;font-weight:600;font-size:.95rem;background:var(--accent);color:var(--accent-ink);border:0;border-radius:10px;padding:11px 16px;cursor:pointer;min-height:46px}
+.btn.secondary{background:var(--surface-2);color:var(--ink)}
+.btn.danger{background:none;color:var(--danger);border:1px solid var(--line)}
+.btn.full{width:100%}
+details.cat{margin-bottom:12px}
+details.cat>summary{list-style:none;cursor:pointer;display:flex;justify-content:space-between;align-items:center;padding:10px 4px;font-family:"Source Serif 4",Georgia,serif;font-size:1.12rem;font-weight:600;min-height:44px}
+details.cat>summary::-webkit-details-marker{display:none}
+details.cat>summary .count{font-family:inherit;font-size:.82rem;font-weight:400;color:var(--muted)}
+details.cat>summary::before{content:"▸";margin-right:8px;color:var(--muted);transition:transform .15s}
+details.cat[open]>summary::before{transform:rotate(90deg)}
+details.cat>summary .lbl{flex:1;display:flex;align-items:center}
+.card{background:var(--surface);border:1px solid var(--line);border-left:5px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px;box-shadow:var(--shadow)}
+.card.s-todo{border-left-color:var(--todo)} .card.s-contacted{border-left-color:var(--contacted)}
+.card.s-waiting{border-left-color:var(--waiting)} .card.s-done{border-left-color:var(--done)} .card.s-na{border-left-color:var(--na);opacity:.75}
+.card-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.card h3{font-size:1.02rem;margin:0;font-weight:600}
+.pill{font-size:.75rem;font-weight:600;border-radius:99px;padding:3px 10px;white-space:nowrap}
+.pill.todo{background:var(--todo-bg);color:var(--todo)} .pill.contacted{background:var(--contacted-bg);color:var(--contacted)}
+.pill.waiting{background:var(--waiting-bg);color:var(--waiting)} .pill.done{background:var(--done-bg);color:var(--done)} .pill.na{background:var(--na-bg);color:var(--na)}
+.tags{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0 0}
+.tag{font-size:.75rem;background:var(--surface-2);color:var(--muted);border-radius:6px;padding:2px 8px}
+.tag.via{background:var(--accent-soft);color:var(--accent)}
+.notes{font-size:.88rem;color:var(--muted);margin:8px 0 0;white-space:pre-wrap}
+.meta{font-size:.8rem;color:var(--muted);margin-top:6px}
+.controls{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:10px;align-items:end}
+.controls label{font-size:.75rem;color:var(--muted);display:flex;flex-direction:column;gap:3px}
+select,input,textarea{font:inherit;font-size:.92rem;color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-height:42px;width:100%}
+textarea{min-height:80px;resize:vertical}
+.linkbtn{font:inherit;font-size:.88rem;background:none;border:1px solid var(--line);color:var(--ink);border-radius:8px;padding:8px 12px;cursor:pointer;min-height:42px}
+a{color:var(--accent)}
+.section-h{font-family:"Source Serif 4",Georgia,serif;font-size:1.15rem;margin:20px 0 6px}
+.help{font-size:.86rem;color:var(--muted);margin:0 0 10px}
+.row{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin-bottom:8px}
+.row input[type=checkbox]{width:24px;height:24px;min-height:0;margin:2px 0 0;flex:none;accent-color:var(--accent)}
+.row .body{flex:1;min-width:0}
+.row .t{font-weight:500}
+.row.checked .t{text-decoration:line-through;color:var(--muted)}
+.row .side{display:flex;gap:6px;align-items:center}
+.row .side select{width:auto;min-width:100px}
+.add-row{display:flex;gap:8px;margin:10px 0}
+.add-row input{flex:1}
+.log li{padding:8px 0;border-bottom:1px solid var(--line);font-size:.9rem;list-style:none}
+.log{padding:0;margin:0}
+.log time{color:var(--muted);font-size:.8rem;display:block}
+.empty{color:var(--muted);text-align:center;padding:30px 0}
+dialog{border:0;border-radius:16px;padding:0;width:min(560px,calc(100vw - 24px));background:var(--surface);color:var(--ink);box-shadow:0 10px 40px rgba(0,0,0,.25)}
+dialog::backdrop{background:rgba(0,0,0,.4)}
+.dlg{padding:18px}
+.dlg h2{font-family:"Source Serif 4",Georgia,serif;margin:0 0 12px;font-size:1.3rem}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.82rem;color:var(--muted);margin-bottom:4px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.hint{font-size:.78rem;color:var(--muted);margin-top:3px}
+.dlg-actions{display:flex;gap:8px;justify-content:space-between;margin-top:6px;flex-wrap:wrap}
+.dlg-actions .right{display:flex;gap:8px;margin-left:auto}
+.people{display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;margin-bottom:12px}
+@media (max-width:520px){
+  .controls{grid-template-columns:1fr 1fr}
+  .controls .linkbtn{grid-column:1/-1}
+  .grid2{grid-template-columns:1fr}
+  .row .side select{min-width:84px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <div class="title-row">
+      <div>
+        <h1 id="title">Family list</h1>
+        <div class="sub" id="subtitle">Shared family to-do list</div>
+      </div>
+      <div class="me" id="me"></div>
+    </div>
+    <nav class="tabs" role="tablist">
+      <button class="tab" role="tab" data-tab="orgs">Organisations</button>
+      <button class="tab" role="tab" data-tab="tasks">Other tasks</button>
+      <button class="tab" role="tab" data-tab="done">Done &amp; Tell Us Once</button>
+      <button class="tab" role="tab" data-tab="log">Activity</button>
+    </nav>
+  </div>
+</header>
+<div class="wrap">
+  <div id="banner"></div>
+  <div class="sync" id="sync" aria-live="polite"></div>
+  <main id="main"><p class="empty">Loading…</p></main>
+</div>
+<dialog id="dlg"><div class="dlg" id="dlgBody"></div></dialog>
+
+<script>
+/* Bin ID and key come from the shared link (#bin=...&key=...), never from this file */
+const CREDS_KEY = 'fl-creds';
+const CREDS = (() => {
+  const h = new URLSearchParams(location.hash.slice(1));
+  let bin = h.get('bin') || '', key = h.get('key') || '';
+  if(bin && key){
+    try{ localStorage.setItem(CREDS_KEY, JSON.stringify({bin,key}));
+      history.replaceState(null,'',location.pathname+location.search); }catch(e){}
+  } else {
+    try{ const c = JSON.parse(localStorage.getItem(CREDS_KEY)||'null'); if(c){ bin=c.bin||''; key=c.key||''; } }catch(e){}
+  }
+  return {bin,key};
+})();
+const CONFIG = { BIN_ID: CREDS.bin, ACCESS_KEY: CREDS.key };
+const LIVE = !!(CONFIG.BIN_ID && CONFIG.ACCESS_KEY);
+const API = 'https://api.jsonbin.io/v3/b/';
+const DEMO_KEY = 'fl-preview';
+const ME_KEY = 'fl-me';
+
+const STATUS = {todo:'To do', contacted:'Contacted', waiting:'Waiting for reply', done:'Done', na:'Not needed'};
+const ACTIONS = ['Check if he had one','Notify','Close / cancel','Transfer to Mum','Claim / collect','Arrange','Keep for now'];
+const VIA = {'':'Contact directly','DNS':'Death Notification Service','Life Ledger':'Life Ledger'};
+const CAT_ORDER = ['Start here','Banks & savings','Pensions','Insurance','Household','Car','Health & care','Memberships & subscriptions','Digital accounts','Post','Legal & estate'];
+
+const uid = () => (crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36)+Math.random().toString(36).slice(2));
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => new Date().toISOString().slice(0,10);
+const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}) : '';
+
+function seed(){
+  const o = (category,name,action,notes='',link='') => ({id:uid(),category,name,action,via:'',status:'todo',owner:'',contacted:'',ref:'',link,notes});
+  return {
+    version:1, created:new Date().toISOString(),
+    title:'Family list', subtitle:'Shared family to-do list',
+    people:[], done:[],
+    tuo:['HMRC (tax)','DWP (State Pension and benefits)','HM Passport Office','DVLA (driving licence)','Local council','Public sector pension schemes'].map(name=>({id:uid(),name,confirmed:false})),
+    orgs:[
+      o('Start here','Death Notification Service (optional)','Check if he had one','One form notifies many banks and building societies at once.','https://www.deathnotificationservice.co.uk'),
+      o('Start here','Life Ledger','Notify','One notification to many UK companies, with progress tracking.','https://lifeledger.com'),
+      o('Banks & savings','Bank account(s)','Check if he had one'),
+      o('Pensions','Workplace / private pension(s)','Notify','Not covered by Tell Us Once (unless public sector).'),
+      o('Household','Gas & electricity','Transfer to Mum'),
+      o('Legal & estate','Will — find the original','Check if he had one'),
+    ],
+    tasks:[], log:[]
+  };
+}
+
+/* ---------- storage ---------- */
+async function load(){
+  if(!LIVE){
+    let d=null; try{ d=JSON.parse(localStorage.getItem(DEMO_KEY)); }catch(e){}
+    return d && d.orgs ? d : null;
+  }
+  const r = await fetch(API+CONFIG.BIN_ID+'/latest',{headers:{'X-Access-Key':CONFIG.ACCESS_KEY,'X-Bin-Meta':'false'},cache:'no-store'});
+  if(!r.ok) throw new Error('Could not load ('+r.status+')');
+  const d = await r.json();
+  return d && d.orgs ? d : null;
+}
+async function save(d){
+  if(!LIVE){ try{ localStorage.setItem(DEMO_KEY, JSON.stringify(d)); }catch(e){} return; }
+  const r = await fetch(API+CONFIG.BIN_ID,{method:'PUT',headers:{'Content-Type':'application/json','X-Access-Key':CONFIG.ACCESS_KEY},body:JSON.stringify(d)});
+  if(!r.ok) throw new Error('Could not save ('+r.status+')');
+}
+
+let data=null, me=null, tab='orgs', filter='all', who='', q='', queue=Promise.resolve(), pending=0, openCats=null;
+try{ me = localStorage.getItem(ME_KEY); }catch(e){}
+try{ tab = localStorage.getItem('fl-tab') || 'orgs'; }catch(e){}
+
+function setSync(state,msg){
+  const el=document.getElementById('sync');
+  el.className='sync'+(state==='error'?' error':'');
+  el.textContent = state==='saving' ? 'Saving…' : state==='error' ? (msg||'Couldn’t save — check your connection and try again.') : state==='saved' ? 'All changes saved' : (msg||'');
+}
+
+/* apply fn locally, then to the latest server copy, so two people editing at once don't overwrite each other */
+function mutate(fn, msg){
+  const entry = msg ? {id:uid(), t:new Date().toISOString(), who:me||'Someone', msg} : null;
+  const apply = d => { fn(d); if(entry){ d.log=d.log||[]; if(!d.log.some(x=>x.id===entry.id)) d.log.unshift(entry); d.log=d.log.slice(0,300);} };
+  apply(data); render();
+  pending++; setSync('saving');
+  queue = queue.then(async()=>{
+    try{
+      const latest = (await load()) || data;
+      if(latest!==data) apply(latest);
+      await save(latest);
+      data = latest; pending--;
+      if(!pending){ setSync('saved'); render(); }
+    }catch(e){ pending--; console.error(e); setSync('error', e.message+' — your last change may not have saved.'); }
+  });
+}
+
+/* ---------- render ---------- */
+function render(){
+  document.querySelectorAll('.tab').forEach(b=>b.setAttribute('aria-selected', b.dataset.tab===tab));
+  document.getElementById('me').innerHTML = me ? `You: <b>${esc(me)}</b><br><button id="changeMe">Not you?</button>` : '';
+  const cm=document.getElementById('changeMe'); if(cm) cm.onclick=askWho;
+  document.getElementById('banner').innerHTML = LIVE ? '' : `<div class="banner"><b>Preview mode.</b> Open this page from the link shared in the family WhatsApp to see the family list. Changes here only save in this browser.</div>`;
+  if(data){ document.getElementById('title').textContent=data.title||'Family list'; document.getElementById('subtitle').textContent=data.subtitle||'Shared family to-do list'; document.title=data.title||'Family List'; }
+  const m=document.getElementById('main');
+  if(!data){ m.innerHTML='<p class="empty">Loading…</p>'; return; }
+  if(tab==='orgs') renderOrgs(m);
+  else if(tab==='tasks') renderTasks(m);
+  else if(tab==='done') renderDone(m);
+  else renderLog(m);
+}
+
+function counts(){
+  const live=data.orgs.filter(o=>o.status!=='na');
+  return {total:live.length, done:live.filter(o=>o.status==='done').length,
+    prog:live.filter(o=>o.status==='contacted'||o.status==='waiting').length,
+    todo:live.filter(o=>o.status==='todo').length};
+}
+
+function renderOrgs(m){
+  // remember which categories are open
+  if(openCats===null) openCats=new Set(CAT_ORDER);
+  const c=counts(); const pct=x=>c.total?(x/c.total*100):0;
+  const cats=[...new Set([...CAT_ORDER.filter(k=>data.orgs.some(o=>o.category===k)), ...data.orgs.map(o=>o.category)])];
+  const ql=q.toLowerCase();
+  const show=o=>{
+    if(filter==='mine' && o.owner!==me) return false;
+    if(filter==='todo' && o.status!=='todo') return false;
+    if(filter==='prog' && !(o.status==='contacted'||o.status==='waiting')) return false;
+    if(filter==='done' && !(o.status==='done'||o.status==='na')) return false;
+    if(filter==='unassigned' && (o.owner || o.status==='done' || o.status==='na')) return false;
+    if(ql && !(o.name+' '+o.notes+' '+o.category).toLowerCase().includes(ql)) return false;
+    return true;
+  };
+  let html=`
+  <div class="summary">
+    <div class="stat"><b>${c.todo}</b><span>To do</span></div>
+    <div class="stat"><b>${c.prog}</b><span>Contacted / waiting</span></div>
+    <div class="stat"><b>${c.done}</b><span>Done</span></div>
+  </div>
+  <div class="bar" title="${c.done} of ${c.total} done"><i style="width:${pct(c.done)}%;background:var(--done)"></i><i style="width:${pct(c.prog)}%;background:var(--contacted)"></i></div>
+  <div class="filters">
+    ${[['all','All'],['mine','Mine'],['unassigned','Nobody on it yet'],['todo','To do'],['prog','Waiting'],['done','Done']].map(([k,l])=>`<button class="chip" data-filter="${k}" aria-pressed="${filter===k}">${l}</button>`).join('')}
+    <input class="search" id="q" type="search" placeholder="Search…" value="${esc(q)}">
+  </div>
+  <button class="btn full" id="addOrg">+ Add an organisation</button>
+  <div style="height:14px"></div>`;
+  let any=false;
+  for(const cat of cats){
+    const items=data.orgs.filter(o=>o.category===cat && show(o));
+    if(!items.length) continue; any=true;
+    const all=data.orgs.filter(o=>o.category===cat&&o.status!=='na'); const d=all.filter(o=>o.status==='done').length;
+    html+=`<details class="cat" data-cat="${esc(cat)}" ${openCats.has(cat)||filter!=='all'||q?'open':''}><summary><span class="lbl">${esc(cat)}</span><span class="count">${d}/${all.length} done</span></summary>`;
+    html+=items.map(card).join('')+`</details>`;
+  }
+  if(!any) html+=`<p class="empty">Nothing here${filter==='mine'?' assigned to you yet':''}.</p>`;
+  m.innerHTML=html;
+  m.querySelectorAll('[data-filter]').forEach(b=>b.onclick=()=>{filter=b.dataset.filter;render();});
+  const qi=m.querySelector('#q'); qi.oninput=()=>{q=qi.value; const pos=qi.selectionStart; render(); const n=document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos);};
+  m.querySelector('#addOrg').onclick=()=>editOrg(null);
+  m.querySelectorAll('details.cat').forEach(d=>d.addEventListener('toggle',()=>{ d.open?openCats.add(d.dataset.cat):openCats.delete(d.dataset.cat); }));
+  m.querySelectorAll('select[data-field]').forEach(s=>s.onchange=()=>{
+    const id=s.dataset.id, f=s.dataset.field, v=s.value;
+    const o=data.orgs.find(x=>x.id===id); if(!o) return;
+    const label = f==='status' ? `marked “${o.name}” as ${STATUS[v]}` : (v?`put ${v} on “${o.name}”`:`unassigned “${o.name}”`);
+    mutate(d=>{ const x=d.orgs.find(y=>y.id===id); if(!x) return; x[f]=v;
+      if(f==='status' && (v==='contacted'||v==='waiting') && !x.contacted) x.contacted=today(); }, label);
+  });
+  m.querySelectorAll('[data-edit]').forEach(b=>b.onclick=()=>editOrg(b.dataset.edit));
+}
+
+function opts(list, cur, blank){ return (blank!==undefined?`<option value="">${blank}</option>`:'')+list.map(v=>{const [val,lab]=Array.isArray(v)?v:[v,v];return `<option value="${esc(val)}" ${val===cur?'selected':''}>${esc(lab)}</option>`;}).join(''); }
+
+function card(o){
+  const meta=[o.contacted?`Contacted ${fmtDate(o.contacted)}`:'', o.ref?`Ref: ${esc(o.ref)}`:''].filter(Boolean).join(' · ');
+  return `<article class="card s-${o.status}">
+    <div class="card-top"><h3>${esc(o.name)}</h3><span class="pill ${o.status}">${STATUS[o.status]}</span></div>
+    <div class="tags"><span class="tag">${esc(o.action)}</span>${o.via?`<span class="tag via">Via ${esc(o.via)}</span>`:''}${o.link?`<a class="tag" href="${esc(o.link)}" target="_blank" rel="noopener">Website ↗</a>`:''}</div>
+    ${o.notes?`<p class="notes">${esc(o.notes)}</p>`:''}
+    ${meta?`<div class="meta">${meta}</div>`:''}
+    <div class="controls">
+      <label>Status<select data-id="${o.id}" data-field="status">${opts(Object.entries(STATUS),o.status)}</select></label>
+      <label>Who’s on it<select data-id="${o.id}" data-field="owner">${opts(data.people,o.owner,'Nobody yet')}</select></label>
+      <button class="linkbtn" data-edit="${o.id}">Details</button>
+    </div>
+  </article>`;
+}
+
+function editOrg(id){
+  const o = id ? data.orgs.find(x=>x.id===id) : {name:'',category:'',action:'Notify',via:'',status:'todo',owner:'',contacted:'',ref:'',link:'',notes:''};
+  if(!o) return;
+  const cats=[...new Set([...CAT_ORDER, ...data.orgs.map(x=>x.category)])];
+  openDlg(`<h2>${id?'Edit organisation':'Add an organisation'}</h2>
+  <form id="f">
+    <div class="field"><label>Organisation</label><input name="name" required value="${esc(o.name)}" placeholder="e.g. Nationwide, Aviva, BT"></div>
+    <div class="grid2">
+      <div class="field"><label>Category</label><input name="category" list="cats" required value="${esc(o.category)}" placeholder="Choose or type"><datalist id="cats">${cats.map(c=>`<option value="${esc(c)}">`).join('')}</datalist></div>
+      <div class="field"><label>What needs doing</label><select name="action">${opts(ACTIONS,o.action)}</select></div>
+      <div class="field"><label>Status</label><select name="status">${opts(Object.entries(STATUS),o.status)}</select></div>
+      <div class="field"><label>Who’s on it</label><select name="owner">${opts(data.people,o.owner,'Nobody yet')}</select></div>
+      <div class="field"><label>How we’re telling them</label><select name="via">${opts(Object.entries(VIA),o.via)}</select></div>
+      <div class="field"><label>Date contacted</label><input type="date" name="contacted" value="${esc(o.contacted)}"></div>
+    </div>
+    <div class="field"><label>Their reference</label><input name="ref" value="${esc(o.ref)}" placeholder="Bereavement ref or last 4 digits">
+      <div class="hint">Never put full account numbers, card numbers or passwords here.</div></div>
+    <div class="field"><label>Website / bereavement page</label><input name="link" type="url" value="${esc(o.link)}" placeholder="https://"></div>
+    <div class="field"><label>Notes</label><textarea name="notes" placeholder="Phone number, who you spoke to, what they need…">${esc(o.notes)}</textarea></div>
+    <div class="dlg-actions">
+      ${id?'<button type="button" class="btn danger" id="del">Remove</button>':''}
+      <div class="right"><button type="button" class="btn secondary" id="cancel">Cancel</button><button class="btn">Save</button></div>
+    </div>
+  </form>`);
+  const f=document.getElementById('f');
+  f.onsubmit=e=>{ e.preventDefault(); const v=Object.fromEntries(new FormData(f)); for(const k in v) v[k]=String(v[k]).trim();
+    if(v.link && !/^https?:\/\//i.test(v.link)) v.link='https://'+v.link;
+    if((v.status==='contacted'||v.status==='waiting') && !v.contacted) v.contacted=today();
+    closeDlg();
+    if(id) mutate(d=>{ const x=d.orgs.find(y=>y.id===id); if(x) Object.assign(x,v); }, `updated “${v.name}”`);
+    else { const nid=uid(); openCats&&openCats.add(v.category); mutate(d=>{ if(!d.orgs.some(y=>y.id===nid)) d.orgs.push({id:nid,...v}); }, `added “${v.name}”`); }
+  };
+  document.getElementById('cancel').onclick=closeDlg;
+  const del=document.getElementById('del'); if(del) del.onclick=()=>{ if(confirm(`Remove “${o.name}” from the list?`)){ closeDlg(); mutate(d=>{ d.orgs=d.orgs.filter(y=>y.id!==id); }, `removed “${o.name}”`);} };
+}
+
+function renderTasks(m){
+  const open=data.tasks.filter(t=>t.status!=='done'), done=data.tasks.filter(t=>t.status==='done');
+  const row=t=>`<div class="row ${t.status==='done'?'checked':''}">
+    <input type="checkbox" data-tick="${t.id}" ${t.status==='done'?'checked':''} aria-label="Done">
+    <div class="body"><div class="t">${esc(t.text)}</div>${t.notes?`<div class="notes">${esc(t.notes)}</div>`:''}</div>
+    <div class="side"><select data-towner="${t.id}" aria-label="Who's on it">${opts(data.people,t.owner,'Nobody')}</select><button class="linkbtn" data-tedit="${t.id}" aria-label="Edit">Edit</button></div>
+  </div>`;
+  m.innerHTML=`<p class="help">Anything that isn’t an organisation to contact.</p>
+    <form class="add-row" id="addT"><input name="t" placeholder="Add a task…" required><button class="btn">Add</button></form>
+    ${open.map(row).join('')||'<p class="empty">Nothing outstanding.</p>'}
+    ${done.length?`<h3 class="section-h">Done</h3>${done.map(row).join('')}`:''}`;
+  m.querySelector('#addT').onsubmit=e=>{ e.preventDefault(); const text=e.target.t.value.trim(); if(!text) return; const id=uid(); mutate(d=>{ if(!d.tasks.some(x=>x.id===id)) d.tasks.push({id,text,owner:'',status:'todo',notes:''}); }, `added task “${text}”`); };
+  m.querySelectorAll('[data-tick]').forEach(c=>c.onchange=()=>{ const id=c.dataset.tick, v=c.checked?'done':'todo', t=data.tasks.find(x=>x.id===id);
+    mutate(d=>{ const x=d.tasks.find(y=>y.id===id); if(x) x.status=v; }, `${v==='done'?'ticked off':'reopened'} “${t.text}”`); });
+  m.querySelectorAll('[data-towner]').forEach(s=>s.onchange=()=>{ const id=s.dataset.towner, v=s.value, t=data.tasks.find(x=>x.id===id);
+    mutate(d=>{ const x=d.tasks.find(y=>y.id===id); if(x) x.owner=v; }, v?`put ${v} on “${t.text}”`:`unassigned “${t.text}”`); });
+  m.querySelectorAll('[data-tedit]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.tedit, t=data.tasks.find(x=>x.id===id);
+    openDlg(`<h2>Edit task</h2><form id="f">
+      <div class="field"><label>Task</label><input name="text" required value="${esc(t.text)}"></div>
+      <div class="field"><label>Notes</label><textarea name="notes">${esc(t.notes)}</textarea></div>
+      <div class="dlg-actions"><button type="button" class="btn danger" id="del">Remove</button>
+      <div class="right"><button type="button" class="btn secondary" id="cancel">Cancel</button><button class="btn">Save</button></div></div></form>`);
+    const f=document.getElementById('f');
+    f.onsubmit=e=>{ e.preventDefault(); const text=f.text.value.trim(), notes=f.notes.value.trim(); closeDlg(); mutate(d=>{ const x=d.tasks.find(y=>y.id===id); if(x){x.text=text;x.notes=notes;} }, `updated task “${text}”`); };
+    document.getElementById('cancel').onclick=closeDlg;
+    document.getElementById('del').onclick=()=>{ if(confirm('Remove this task?')){ closeDlg(); mutate(d=>{ d.tasks=d.tasks.filter(y=>y.id!==id); }, `removed task “${t.text}”`);} };
+  });
+}
+
+function renderDone(m){
+  m.innerHTML=`<h3 class="section-h" style="margin-top:0">Already done</h3>
+    ${data.done.map(x=>`<div class="row"><span aria-hidden="true">✓</span><div class="body"><div class="t">${esc(x.text)}</div>${x.date?`<div class="meta">${fmtDate(x.date)}</div>`:''}</div><button class="linkbtn" data-ddel="${x.id}" aria-label="Remove">✕</button></div>`).join('')}
+    <form class="add-row" id="addD"><input name="t" placeholder="Add something that’s been done…" required><button class="btn">Add</button></form>
+
+    <h3 class="section-h">Told through Tell Us Once</h3>
+    <p class="help">No need to contact these again. Tick when a confirmation letter arrives. Only chase if nothing has come after about a month.</p>
+    ${data.tuo.map(x=>`<label class="row ${x.confirmed?'checked':''}"><input type="checkbox" data-tuo="${x.id}" ${x.confirmed?'checked':''}><div class="body"><div class="t">${esc(x.name)}</div><div class="meta">${x.confirmed?'Confirmation received':'Waiting for confirmation'}</div></div></label>`).join('')}
+    <p class="help" style="margin-top:14px">Tell Us Once doesn’t cover banks, private pensions, utilities or any other companies — those are on the Organisations tab.</p>
+
+    <h3 class="section-h">Family members</h3>
+    <p class="help">Names that appear in “Who’s on it”.</p>
+    <div>${data.people.map(p=>`<span class="tag" style="font-size:.88rem;margin:0 6px 6px 0;display:inline-block;padding:4px 10px">${esc(p)}</span>`).join('')}</div>
+    <form class="add-row" id="addP"><input name="p" placeholder="Add a name" required><button class="btn">Add</button></form>`;
+  m.querySelector('#addD').onsubmit=e=>{ e.preventDefault(); const text=e.target.t.value.trim(); const id=uid(); mutate(d=>{ if(!d.done.some(x=>x.id===id)) d.done.push({id,text,date:today()}); }, `added to done: “${text}”`); };
+  m.querySelectorAll('[data-ddel]').forEach(b=>b.onclick=()=>{ const id=b.dataset.ddel, x=data.done.find(y=>y.id===id); if(confirm(`Remove “${x.text}”?`)) mutate(d=>{ d.done=d.done.filter(y=>y.id!==id); }, `removed “${x.text}” from done`); });
+  m.querySelectorAll('[data-tuo]').forEach(c=>c.onchange=()=>{ const id=c.dataset.tuo, v=c.checked, x=data.tuo.find(y=>y.id===id);
+    mutate(d=>{ const y=d.tuo.find(z=>z.id===id); if(y) y.confirmed=v; }, v?`got confirmation from ${x.name}`:`unticked ${x.name}`); });
+  m.querySelector('#addP').onsubmit=e=>{ e.preventDefault(); const p=e.target.p.value.trim(); if(!p||data.people.includes(p)) return; mutate(d=>{ if(!d.people.includes(p)) d.people.push(p); }, `added ${p} to the family list`); };
+}
+
+function ago(iso){ const s=(Date.now()-new Date(iso))/1000;
+  if(s<60) return 'just now'; if(s<3600) return Math.floor(s/60)+' min ago'; if(s<86400) return Math.floor(s/3600)+'h ago';
+  return new Date(iso).toLocaleString('en-GB',{weekday:'short',day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}); }
+function renderLog(m){
+  const l=(data.log||[]).slice(0,100);
+  m.innerHTML = l.length ? `<ul class="log">${l.map(x=>`<li><b>${esc(x.who)}</b> ${esc(x.msg)}<time>${ago(x.t)}</time></li>`).join('')}</ul>` : '<p class="empty">No changes yet.</p>';
+}
+
+/* ---------- dialog & who-are-you ---------- */
+const dlg=document.getElementById('dlg');
+function openDlg(html){ document.getElementById('dlgBody').innerHTML=html; if(dlg.showModal) dlg.showModal(); else dlg.setAttribute('open',''); const first=dlg.querySelector('input,select,textarea'); if(first && window.innerWidth>600) first.focus(); }
+function closeDlg(){ if(dlg.close) dlg.close(); else dlg.removeAttribute('open'); }
+function askWho(){
+  openDlg(`<h2>Who’s using this?</h2><p class="help">So the family can see who updated what. You only need to do this once on this device.</p>
+    <div class="people">${data.people.map(p=>`<button class="btn secondary" data-p="${esc(p)}">${esc(p)}</button>`).join('')}</div>
+    <form class="add-row" id="other"><input name="n" placeholder="Someone else — your name" required><button class="btn">OK</button></form>`);
+  dlg.querySelectorAll('[data-p]').forEach(b=>b.onclick=()=>setMe(b.dataset.p));
+  document.getElementById('other').onsubmit=e=>{ e.preventDefault(); const n=e.target.n.value.trim(); if(!n) return;
+    if(!data.people.includes(n)) mutate(d=>{ if(!d.people.includes(n)) d.people.push(n); }, null);
+    setMe(n); };
+}
+function setMe(n){ me=n; try{ localStorage.setItem(ME_KEY,n); }catch(e){} closeDlg(); render(); }
+
+document.querySelectorAll('.tab').forEach(b=>b.onclick=()=>{ tab=b.dataset.tab; try{ localStorage.setItem('fl-tab',tab); }catch(e){} render(); window.scrollTo(0,0); });
+
+/* ---------- start ---------- */
+async function start(){
+  try{
+    let d = await load();
+    if(!d){ d=seed(); data=d; await save(d); }
+    data=d; setSync('', LIVE?'Up to date':'');
+  }catch(e){
+    console.error(e); setSync('error', e.message+'. Showing the starter list — changes won’t be shared until this works.');
+    data=seed();
+  }
+  render();
+  if(!me) askWho();
+}
+start();
+
+// pick up other people's changes every 30 seconds, and when the tab comes back into view
+async function refresh(){
+  if(!LIVE || pending || dlg.open || document.hidden) return;
+  try{ const d=await load(); if(d && !pending && !dlg.open){ data=d; const a=document.activeElement; if(!(a && a.id==='q')) render(); setSync('', 'Up to date'); } }catch(e){}
+}
+setInterval(refresh, 30000);
+document.addEventListener('visibilitychange', ()=>{ if(!document.hidden) refresh(); });
+</script>
+</body>
+</html>
